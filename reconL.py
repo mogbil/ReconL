@@ -33,6 +33,12 @@ GTFO_COUNT = 0
 SUID_COUNT = 0
 CVE_CRITICAL = 0
 
+# Check if running as root
+RUN_AS_ROOT = os.geteuid() == 0 if hasattr(os, 'geteuid') else subprocess.getoutput('id -u') == '0'
+if not RUN_AS_ROOT:
+    YELLOW = "\e[33m"
+    CYAN = "\e[36m"
+
 def banner(msg):
     print(f"\n{BLUE}{'='*64}{RESET}\n{CYAN}{msg}{RESET}\n{BLUE}{'='*64}{RESET}")
 
@@ -63,6 +69,11 @@ def get_kernel():
 
 # ========== START ==========
 banner(f"Advanced Stealth Enumeration Framework v{VERSION} (Python)")
+
+if not RUN_AS_ROOT:
+    print(f"\n{YELLOW}[!] WARNING: Running without root privileges{RESET}")
+    print(f"{YELLOW}[!] Some features will be limited (SUID, capabilities, etc.){RESET}")
+    print(f"{YELLOW}[!] For full enumeration, run with: sudo python3 {sys.argv[0]}{RESET}\n")
 
 # Open log
 log_file = open(REPORT, 'a')

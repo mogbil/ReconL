@@ -28,6 +28,15 @@ GTFO_COUNT=0
 SUID_COUNT=0
 CVE_CRITICAL=0
 
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    RUN_AS_ROOT=0
+    YELLOW="\e[33m"
+    CYAN="\e[36m"
+else
+    RUN_AS_ROOT=1
+fi
+
 banner() {
     echo -e "\n${BLUE}================================================================${RESET}"
     echo -e "${CYAN}$1${RESET}"
@@ -62,6 +71,12 @@ json_escape() {
 # =============================================================================
 
 banner "Advanced Stealth Enumeration Framework v$VERSION"
+
+if [ "$RUN_AS_ROOT" -eq 0 ]; then
+    echo -e "\n${YELLOW}[!] WARNING: Running without root privileges${RESET}"
+    echo -e "${YELLOW}[!] Some features will be limited (SUID, capabilities, etc.)${RESET}"
+    echo -e "${YELLOW}[!] For full enumeration, run with: sudo $0${RESET}\n"
+fi
 
 # =============================================================================
 # DEPENDENCY CHECK

@@ -34,6 +34,13 @@ my $GTFO_COUNT = 0;
 my $SUID_COUNT = 0;
 my $CVE_CRITICAL = 0;
 
+# Check if running as root
+my $RUN_AS_ROOT = ($> == 0);
+if (!$RUN_AS_ROOT) {
+    $YELLOW = "\e[33m";
+    $CYAN = "\e[36m";
+}
+
 # Open log file
 open(my $LOG, '>>', $REPORT) or die "Cannot open $REPORT: $!";
 select($LOG);
@@ -72,6 +79,12 @@ sub exists_cmd {
 
 # ========== START ==========
 banner("Advanced Stealth Enumeration Framework v$VERSION (Perl)");
+
+if (!$RUN_AS_ROOT) {
+    print "\n${YELLOW}[!] WARNING: Running without root privileges${RESET}\n";
+    print "${YELLOW}[!] Some features will be limited (SUID, capabilities, etc.)${RESET}\n";
+    print "${YELLOW}[!] For full enumeration, run with: sudo perl $0${RESET}\n";
+}
 
 # =============================================================================
 # DEPENDENCY CHECK

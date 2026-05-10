@@ -37,6 +37,8 @@ curl -L https://github.com/mogbil/ReconL/raw/main/reconL.py | python3
 
 ## Usage 
 
+Run with root, with full features:
+
 ```bash
 # Bash (requires jq)
 chmod +x reconL.sh
@@ -50,6 +52,29 @@ sudo perl reconL.pl
 chmod +x reconL.py
 sudo python3 reconL.py
 ```
+
+## Running Without Root (Limited Mode)
+
+All versions can run without root, but some features will be limited:
+
+```bash
+# Bash (without root)
+./reconL.sh
+
+# Perl (without root)
+perl reconL.pl
+
+# Python (without root)
+python3 reconL.py
+```
+
+| Feature | Without Root | With Root |
+|---------|--------------|-----------|
+| System Info | ✅ | ✅ |
+| SUID Binaries | ❌ Limited | ✅ Full |
+| Linux Capabilities | ❌ | ✅ |
+| Network Details | ❌ Limited | ✅ Full |
+| Secrets Discovery | ❌ Limited | ✅ Full |
 
 ## What It Enumerates
 
