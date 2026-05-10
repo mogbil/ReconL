@@ -1,9 +1,4 @@
 #!/usr/bin/env perl
-# =============================================================================
-# ReconL v1.0 : Local Privilege Escalation Reconnaissance Tool (Perl Version)
-# By m.R.L.s | mrls@tuta.io
-# =============================================================================
-
 use strict;
 use warnings;
 use POSIX;
@@ -11,7 +6,6 @@ use URI::Escape;
 use LWP::Simple;
 use JSON;
 
-# Colors
 my $RED = "\e[31m";
 my $GREEN = "\e[32m";
 my $YELLOW = "\e[33m";
@@ -19,13 +13,11 @@ my $BLUE = "\e[34m";
 my $CYAN = "\e[36m";
 my $RESET = "\e[0m";
 
-# Config
 my $VERSION = "1.0";
 my $DATE = strftime("%F_%H-%M-%S", localtime);
 my $HOST = $ENV{HOSTNAME} // `hostname` // "unknown";
 chomp($HOST);
 
-# Determine writable directory
 my $LOG_DIR = -d "/tmp" && -w "/tmp" ? "/tmp" : ".";
 
 my $REPORT = "stealth_enum_${HOST}_${DATE}.log";
@@ -33,13 +25,11 @@ my $JSON_FILE = "stealth_enum_${HOST}_${DATE}.json";
 my $KERNEL = `uname -r`;
 chomp($KERNEL);
 
-# Counters
 my $VULN_COUNT = 0;
 my $GTFO_COUNT = 0;
 my $SUID_COUNT = 0;
 my $CVE_CRITICAL = 0;
 
-# Check if running as root
 my $RUN_AS_ROOT = ($> == 0);
 if (!$RUN_AS_ROOT) {
     $YELLOW = "\e[33m";
@@ -48,34 +38,37 @@ if (!$RUN_AS_ROOT) {
 
 my $LOG_PATH = "$LOG_DIR/$REPORT";
 
-# Open log file
 open(my $LOG, '>>', $LOG_PATH) or die "Cannot open $LOG_PATH: $!\n";
-select($LOG);
+
+sub tee_print {
+    my ($msg) = @_;
+    print $msg;
+    print $LOG $msg;
+}
 
 sub banner {
     my ($msg) = @_;
-    print "\n${BLUE}================================================================${RESET}\n";
-    print "${CYAN}$msg${RESET}\n";
-    print "${BLUE}================================================================${RESET}\n";
+    my $out = "\n${BLUE}================================================================${RESET}\n${CYAN}$msg${RESET}\n${BLUE}================================================================${RESET}\n";
+    tee_print($out);
 }
 
 sub section {
     my ($msg) = @_;
-    print "\n${YELLOW}[+] $msg${RESET}\n";
+    tee_print("\n${YELLOW}[+] $msg${RESET}\n");
 }
 
 sub progress {
     my ($msg) = @_;
-    print "${CYAN}[*] $msg... ${RESET}";
+    tee_print("${CYAN}[*] $msg... ${RESET}");
     sleep 0.3;
-    print "${GREEN}✓${RESET}\n";
+    tee_print("${GREEN}✓${RESET}\n");
 }
 
 sub safe_cmd {
     my ($cmd) = @_;
-    print "\n${GREEN}\$ $cmd${RESET}\n";
+    tee_print("\n${GREEN}\$ $cmd${RESET}\n");
     my $out = `$cmd 2>/dev/null`;
-    print $out if $out;
+    tee_print($out) if $out;
     return $out;
 }
 
@@ -84,9 +77,6 @@ sub exists_cmd {
     return !!`command -v $cmd 2>/dev/null`;
 }
 
-# ========== START ==========
-
-# Check if running on Linux
 if (! -f "/proc/cpuinfo") {
     print "\n${RED}[!] ERROR: This script requires Linux!${RESET}\n";
     my $sys = `uname -s`;
@@ -103,9 +93,6 @@ if (!$RUN_AS_ROOT) {
     print "${YELLOW}[!] For full enumeration, run with: sudo perl $0${RESET}\n";
 }
 
-# =============================================================================
-# DEPENDENCY CHECK
-# =============================================================================
 section("Dependencies Check");
 
 my @missing_deps;
@@ -122,9 +109,6 @@ if (@missing_deps) {
     print "\n${YELLOW}[!] Some dependencies missing. Some features may not work.${RESET}\n";
 }
 
-# =============================================================================
-# BASIC INFO
-# =============================================================================
 section("Basic System Info");
 
 my $USER_NAME = `whoami`;
@@ -137,9 +121,6 @@ safe_cmd("hostname");
 safe_cmd("id");
 safe_cmd("uname -a");
 
-# =============================================================================
-# KERNEL / PRIVESC ENUMERATION
-# =============================================================================
 section("Kernel Enumeration");
 
 safe_cmd("uname -r");
@@ -161,9 +142,6 @@ if (-f "/boot/config-$KERNEL") {
     print "$config\n";
 }
 
-# =============================================================================
-# USER ENUMERATION
-# =============================================================================
 section("Users & Privileges");
 
 safe_cmd("id");
@@ -173,9 +151,6 @@ safe_cmd("sudo -l");
 print "\n[+] Home Directories\n";
 print `ls -lah /home 2>/dev/null`;
 
-# =============================================================================
-# SUDO / GTFOBins
-# =============================================================================
 section("GTFOBins & Sudo Abuse");
 
 my $sudo_l = `sudo -l 2>/dev/null`;
@@ -189,12 +164,8 @@ foreach my $bin (@gtfobins) {
     }
 }
 
-# =============================================================================
-# SUID / SGID - Enhanced parsing
-# =============================================================================
 section("SUID / SGID");
 
-# Known vulnerable SUID binaries
 my @VULN_SUIDS = qw(
     nmap vim find bash sh dash zsh tcsh csh
     perl python python2 python3 ruby php node npm
@@ -223,18 +194,12 @@ foreach my $suid (split(/\n/, $suid_list)) {
     }
 }
 
-# =============================================================================
-# CAPABILITIES
-# =============================================================================
 section("Linux Capabilities");
 
 if (exists_cmd("getcap")) {
     print `getcap -r / 2>/dev/null`;
 }
 
-# =============================================================================
-# NETWORK ENUMERATION
-# =============================================================================
 section("Network");
 
 safe_cmd("ip a");
@@ -245,9 +210,6 @@ safe_cmd("arp -a");
 print "\n[+] Established Connections\n";
 print `ss -antp 2>/dev/null | grep ESTAB`;
 
-# =============================================================================
-# SERVICES / PROCESSES
-# =============================================================================
 section("Processes");
 
 print `ps aux --forest 2>/dev/null | head -200`;
@@ -255,17 +217,11 @@ print `ps aux --forest 2>/dev/null | head -200`;
 print "\n[+] Interesting Processes\n";
 print `ps aux | egrep -i "mysql|mariadb|postgres|redis|docker|nginx|apache|httpd|php-fpm|node|java"`;
 
-# =============================================================================
-# CRON ENUMERATION
-# =============================================================================
 section("Cron Jobs");
 
 print `crontab -l 2>/dev/null`;
 print `ls -lah /etc/cron* 2>/dev/null`;
 
-# =============================================================================
-# DOCKER / CONTAINERS
-# =============================================================================
 section("Containers");
 
 if (-f "/.dockerenv") {
@@ -278,17 +234,11 @@ if (exists_cmd("docker")) {
     print `docker ps -a 2>/dev/null`;
 }
 
-# =============================================================================
-# CLOUD / VIRTUALIZATION
-# =============================================================================
 section("Cloud / VM Detection");
 
 print `grep -i hypervisor /proc/cpuinfo`;
 print `dmesg 2>/dev/null | grep -i virtual`;
 
-# =============================================================================
-# CLOUDLINUX / CPANEL
-# =============================================================================
 section("CloudLinux / cPanel");
 
 if (-f "/usr/sbin/lvectl") {
@@ -299,70 +249,49 @@ if (-d "/usr/local/cpanel") {
     print `cat /usr/local/cpanel/version 2>/dev/null`;
 }
 
-# =============================================================================
-# WEB ENUMERATION
-# =============================================================================
 section("Web Enumeration");
 
 print `find /var/www/ -type f 2>/dev/null | egrep "\\.env|config|wp-config|database|settings|\\.bak"`;
+print `find /home/ -type f 2>/dev/null | egrep "\\.env|config|wp-config|database|settings|\\.bak"`;
 
 print "\n[+] Writable Web Files\n";
 print `find /var/www/ -writable -type f 2>/dev/null | head -50`;
+print `find /home/ -writable -type f 2>/dev/null | head -50`;
 
-# =============================================================================
-# PASSWORD / SECRET ENUMERATION
-# =============================================================================
 section("Secrets Discovery");
 
 print `grep -Ri "password" /var/www/ 2>/dev/null | head -50`;
-print `find / -name ".env" 2>/dev/null | head -50`;
+print `grep -Ri "password" /home/ 2>/dev/null | head -50`;
+print `find /var/www/ /home/ -name ".env" 2>/dev/null | head -50`;
 print `find / -name "id_rsa*" 2>/dev/null`;
 print `find / -name "*.pem" 2>/dev/null | head -50`;
 
-# =============================================================================
-# PATH HIJACK
-# =============================================================================
 section("PATH Hijacking");
 
 print "PATH: $ENV{PATH}\n";
 print `find . -writable -type d 2>/dev/null`;
 
-# =============================================================================
-# NFS / MOUNTS
-# =============================================================================
 section("Mounts");
 
 print `mount`;
 print `df -h`;
 print `cat /etc/fstab 2>/dev/null`;
 
-# =============================================================================
-# SECURITY PRODUCTS
-# =============================================================================
 section("Security Products");
 
 print `ps aux | egrep -i "clamav|crowdstrike|falcon|wazuh|ossec|auditd|defender|sentinel"`;
 
-# =============================================================================
-# LDAP / AD
-# =============================================================================
 section("LDAP / Active Directory");
 
 print `cat /etc/krb5.conf 2>/dev/null`;
 print `grep -Ri ldap /etc 2>/dev/null | head -50`;
 
-# =============================================================================
-# PERSISTENCE
-# =============================================================================
 section("Persistence Checks");
 
 print `ls -lah ~/.ssh 2>/dev/null`;
 print `cat ~/.bashrc 2>/dev/null | tail -20`;
 print `cat ~/.profile 2>/dev/null | tail -20`;
 
-# =============================================================================
-# QUICK VULN CHECKS
-# =============================================================================
 section("Quick Vulnerability Checks");
 
 print "\n[+] Writable passwd?\n";
@@ -385,9 +314,6 @@ if ($nopasswd) {
     $VULN_COUNT++;
 }
 
-# =============================================================================
-# AUTO CVE MAPPER
-# =============================================================================
 section("CVE Mapping (NVD NIST)");
 
 my $search_term = "linux kernel $KERNEL";
@@ -461,9 +387,6 @@ if ($total > 0) {
 print "\n${CYAN}[*] CVE Lookup Complete${RESET}\n";
 print "${CYAN}[*] Reference: https://nvd.nist.gov/vuln/search/results?query=", uri_escape($KERNEL), "${RESET}\n\n";
 
-# =============================================================================
-# PRIVILEGE ESCALATION SUMMARY
-# =============================================================================
 section("PRIVILEGE ESCALATION SUMMARY");
 
 print "============================================\n";
@@ -480,15 +403,11 @@ if ($VULN_COUNT > 0 || $GTFO_COUNT > 0 || $SUID_COUNT > 0) {
     print "${CYAN}[*] Review highlighted findings above${RESET}\n";
 }
 
-# =============================================================================
-# FINISHED
-# =============================================================================
 banner("ENUMERATION COMPLETE");
 
 print "\n${GREEN}[+] Report:${RESET} $LOG_DIR/$REPORT\n";
 print "${GREEN}[+] JSON:${RESET} $LOG_DIR/$JSON_FILE\n";
 
-# Write JSON
 select(STDOUT);
 open(my $JSON_OUT, '>', "$LOG_DIR/$JSON_FILE") or die "Cannot open $LOG_DIR/$JSON_FILE: $!";
 print $JSON_OUT JSON->new->utf8->encode({

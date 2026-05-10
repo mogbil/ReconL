@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# =============================================================================
-# ReconL v1.0 : Local Privilege Escalation Reconnaissance Tool (Python Version)
-# By m.R.L.s | mrls@tuta.io
-# =============================================================================
 
 import os
 import sys
@@ -13,7 +9,6 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 
-# Colors
 RED = r"\e[31m"
 GREEN = r"\e[32m"
 YELLOW = r"\e[33m"
@@ -21,20 +16,17 @@ BLUE = r"\e[34m"
 CYAN = r"\e[36m"
 RESET = r"\e[0m"
 
-# Config
 VERSION = "1.0"
 DATE = datetime.now().strftime("%F_%H-%M-%S")
 HOST = os.environ.get('HOSTNAME') or subprocess.getoutput('hostname').strip() or "unknown"
 REPORT = f"stealth_enum_{HOST}_{DATE}.log"
 JSON_FILE = f"stealth_enum_{HOST}_{DATE}.json"
 
-# Counters
 VULN_COUNT = 0
 GTFO_COUNT = 0
 SUID_COUNT = 0
 CVE_CRITICAL = 0
 
-# Check if running as root
 RUN_AS_ROOT = os.geteuid() == 0 if hasattr(os, 'geteuid') else subprocess.getoutput('id -u') == '0'
 if not RUN_AS_ROOT:
     YELLOW = r"\e[33m"
@@ -68,9 +60,6 @@ def get_kernel():
     with open('/proc/version', 'r') as f:
         return f.read().strip().split()[2].strip('()')
 
-# ========== START ==========
-
-# Check if running on Linux
 if not os.path.exists('/proc/cpuinfo'):
     print(f"\n{RED}[!] ERROR: This script requires Linux!{RESET}")
     print(f"{RED}[!] Detected: {os.uname().sysname}{RESET}")
@@ -84,18 +73,18 @@ if not RUN_AS_ROOT:
     print(f"{YELLOW}[!] Some features will be limited (SUID, capabilities, etc.){RESET}")
     print(f"{YELLOW}[!] For full enumeration, run with: sudo python3 {sys.argv[0]}{RESET}\n")
 
-# Determine writable directory for log
 LOG_DIR = "/tmp" if os.path.isdir("/tmp") else "."
 LOG_PATH = f"{LOG_DIR}/{REPORT}"
 
-# Open log
-log_file = open(LOG_PATH, 'a')
-original_stdout = sys.stdout
-sys.stdout = log_file
+LOG_FILE = None
+def tee_print(*args, **kwargs):
+    msg = ' '.join(str(a) for a in args)
+    print(msg, **kwargs)
+    if LOG_FILE:
+        LOG_FILE.write(msg + '\n')
 
-# =============================================================================
-# DEPENDENCY CHECK
-# =============================================================================
+LOG_FILE = open(LOG_PATH, 'a')
+
 section("Dependencies Check")
 
 missing_deps = []
@@ -109,9 +98,6 @@ for cmd in ['curl', 'find']:
 if missing_deps:
     print(f"\n{YELLOW}[!] Some dependencies missing. Some features may not work.{RESET}")
 
-# =============================================================================
-# BASIC INFO
-# =============================================================================
 section("Basic System Info")
 
 USER_NAME = subprocess.getoutput('whoami')
@@ -123,9 +109,6 @@ safe_cmd("hostname")
 safe_cmd("id")
 safe_cmd("uname -a")
 
-# =============================================================================
-# KERNEL / PRIVESC ENUMERATION
-# =============================================================================
 section("Kernel Enumeration")
 
 safe_cmd("uname -r")
@@ -145,9 +128,6 @@ if os.path.exists(config_file):
     for pattern in ['CONFIG_USER_NS', 'CONFIG_BPF', 'CONFIG_IO_URING']:
         print(subprocess.getoutput(f'grep {pattern} {config_file} 2>/dev/null'))
 
-# =============================================================================
-# USER ENUMERATION
-# =============================================================================
 section("Users & Privileges")
 
 safe_cmd("id")
@@ -157,9 +137,6 @@ safe_cmd("sudo -l")
 print("\n[+] Home Directories")
 print(subprocess.getoutput('ls -lah /home 2>/dev/null'))
 
-# =============================================================================
-# SUDO / GTFOBins
-# =============================================================================
 section("GTFOBins & Sudo Abuse")
 
 sudo_l = subprocess.getoutput('sudo -l 2>/dev/null')
@@ -171,12 +148,8 @@ for bin in gtfobins:
         print(f"{RED}[!] GTFOBIN: {bin}{RESET}")
         GTFO_COUNT += 1
 
-# =============================================================================
-# SUID / SGID - Enhanced parsing
-# =============================================================================
 section("SUID / SGID")
 
-# Known vulnerable SUID binaries
 VULN_SUIDS = [
     'nmap', 'vim', 'find', 'bash', 'sh', 'dash', 'zsh', 'tcsh', 'csh',
     'perl', 'python', 'python2', 'python3', 'ruby', 'php', 'node', 'npm',
@@ -200,17 +173,11 @@ for suid in suid_list.split('\n'):
         SUID_COUNT += 1
         VULN_COUNT += 1
 
-# =============================================================================
-# CAPABILITIES
-# =============================================================================
 section("Linux Capabilities")
 
 if exists_cmd("getcap"):
     print(subprocess.getoutput('getcap -r / 2>/dev/null'))
 
-# =============================================================================
-# NETWORK ENUMERATION
-# =============================================================================
 section("Network")
 
 safe_cmd("ip a")
@@ -221,9 +188,6 @@ safe_cmd("arp -a")
 print("\n[+] Established Connections")
 print(subprocess.getoutput('ss -antp 2>/dev/null | grep ESTAB'))
 
-# =============================================================================
-# SERVICES / PROCESSES
-# =============================================================================
 section("Processes")
 
 print(subprocess.getoutput('ps aux --forest 2>/dev/null | head -200'))
@@ -231,17 +195,11 @@ print(subprocess.getoutput('ps aux --forest 2>/dev/null | head -200'))
 print("\n[+] Interesting Processes")
 print(subprocess.getoutput('ps aux | egrep -i "mysql|mariadb|postgres|redis|docker|nginx|apache|httpd|php-fpm|node|java"'))
 
-# =============================================================================
-# CRON ENUMERATION
-# =============================================================================
 section("Cron Jobs")
 
 print(subprocess.getoutput('crontab -l 2>/dev/null'))
 print(subprocess.getoutput('ls -lah /etc/cron* 2>/dev/null'))
 
-# =============================================================================
-# DOCKER / CONTAINERS
-# =============================================================================
 section("Containers")
 
 if os.path.exists('/.dockerenv'):
@@ -252,17 +210,11 @@ print(subprocess.getoutput('grep docker /proc/1/cgroup 2>/dev/null'))
 if exists_cmd("docker"):
     print(subprocess.getoutput('docker ps -a 2>/dev/null'))
 
-# =============================================================================
-# CLOUD / VIRTUALIZATION
-# =============================================================================
 section("Cloud / VM Detection")
 
 print(subprocess.getoutput('grep -i hypervisor /proc/cpuinfo'))
 print(subprocess.getoutput('dmesg 2>/dev/null | grep -i virtual'))
 
-# =============================================================================
-# CLOUDLINUX / CPANEL
-# =============================================================================
 section("CloudLinux / cPanel")
 
 if os.path.exists('/usr/sbin/lvectl'):
@@ -271,70 +223,49 @@ if os.path.exists('/usr/sbin/lvectl'):
 if os.path.isdir('/usr/local/cpanel'):
     print(subprocess.getoutput('cat /usr/local/cpanel/version 2>/dev/null'))
 
-# =============================================================================
-# WEB ENUMERATION
-# =============================================================================
 section("Web Enumeration")
 
 print(subprocess.getoutput('find /var/www/ -type f 2>/dev/null | egrep "\\.env|config|wp-config|database|settings|\\.bak"'))
+print(subprocess.getoutput('find /home/ -type f 2>/dev/null | egrep "\\.env|config|wp-config|database|settings|\\.bak"'))
 
 print("\n[+] Writable Web Files")
 print(subprocess.getoutput('find /var/www/ -writable -type f 2>/dev/null | head -50'))
+print(subprocess.getoutput('find /home/ -writable -type f 2>/dev/null | head -50'))
 
-# =============================================================================
-# PASSWORD / SECRET ENUMERATION
-# =============================================================================
 section("Secrets Discovery")
 
 print(subprocess.getoutput('grep -Ri "password" /var/www/ 2>/dev/null | head -50'))
-print(subprocess.getoutput('find / -name ".env" 2>/dev/null | head -50'))
+print(subprocess.getoutput('grep -Ri "password" /home/ 2>/dev/null | head -50'))
+print(subprocess.getoutput('find /var/www/ /home/ -name ".env" 2>/dev/null | head -50'))
 print(subprocess.getoutput('find / -name "id_rsa*" 2>/dev/null'))
 print(subprocess.getoutput('find / -name "*.pem" 2>/dev/null | head -50'))
 
-# =============================================================================
-# PATH HIJACK
-# =============================================================================
 section("PATH Hijacking")
 
 print(f"PATH: {os.environ.get('PATH', '')}")
 print(subprocess.getoutput('find . -writable -type d 2>/dev/null'))
 
-# =============================================================================
-# NFS / MOUNTS
-# =============================================================================
 section("Mounts")
 
 print(subprocess.getoutput('mount'))
 print(subprocess.getoutput('df -h'))
 print(subprocess.getoutput('cat /etc/fstab 2>/dev/null'))
 
-# =============================================================================
-# SECURITY PRODUCTS
-# =============================================================================
 section("Security Products")
 
 print(subprocess.getoutput('ps aux | egrep -i "clamav|crowdstrike|falcon|wazuh|ossec|auditd|defender|sentinel"'))
 
-# =============================================================================
-# LDAP / AD
-# =============================================================================
 section("LDAP / Active Directory")
 
 print(subprocess.getoutput('cat /etc/krb5.conf 2>/dev/null'))
 print(subprocess.getoutput('grep -Ri ldap /etc 2>/dev/null | head -50'))
 
-# =============================================================================
-# PERSISTENCE
-# =============================================================================
 section("Persistence Checks")
 
 print(subprocess.getoutput('ls -lah ~/.ssh 2>/dev/null'))
 print(subprocess.getoutput('cat ~/.bashrc 2>/dev/null | tail -20'))
 print(subprocess.getoutput('cat ~/.profile 2>/dev/null | tail -20'))
 
-# =============================================================================
-# QUICK VULN CHECKS
-# =============================================================================
 section("Quick Vulnerability Checks")
 
 print("\n[+] Writable passwd?")
@@ -354,9 +285,6 @@ if nopasswd:
     print(nopasswd)
     VULN_COUNT += 1
 
-# =============================================================================
-# AUTO CVE MAPPER
-# =============================================================================
 section("CVE Mapping (NVD NIST)")
 
 search_term = f"linux kernel {KERNEL}"
@@ -427,9 +355,6 @@ if total > 0:
 print(f"\n{CYAN}[*] CVE Lookup Complete{RESET}")
 print(f"{CYAN}[*] Reference: https://nvd.nist.gov/vuln/search/results?query={urllib.parse.quote(KERNEL)}{RESET}\n\n")
 
-# =============================================================================
-# PRIVILEGE ESCALATION SUMMARY
-# =============================================================================
 section("PRIVILEGE ESCALATION SUMMARY")
 
 print("============================================")
@@ -445,19 +370,14 @@ if VULN_COUNT > 0 or GTFO_COUNT > 0 or SUID_COUNT > 0:
     print(f"\n{RED}[!] Privilege Escalation vectors found!{RESET}")
     print(f"{CYAN}[*] Review highlighted findings above{RESET}")
 
-# =============================================================================
-# FINISHED
-# =============================================================================
 banner("ENUMERATION COMPLETE")
 
-print(f"\n{GREEN}[+] Report:{RESET} {REPORT}")
-print(f"{GREEN}[+] JSON:{RESET} {JSON_FILE}")
+print(f"\n{GREEN}[+] Report:{RESET} {LOG_DIR}/{REPORT}")
+print(f"{GREEN}[+] JSON:{RESET} {LOG_DIR}/{JSON_FILE}")
 
-# Restore stdout and write JSON
-sys.stdout = original_stdout
-log_file.close()
+LOG_FILE.close()
 
-with open(JSON_FILE, 'w') as f:
+with open(f"{LOG_DIR}/{JSON_FILE}", 'w') as f:
     json.dump({
         'host': HOST,
         'user': USER_NAME,
