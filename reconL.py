@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # =============================================================================
 # ReconL v1.0 : Local Privilege Escalation Reconnaissance Tool (Python Version)
+# By m.R.L.s | mrls@tuta.io
 # =============================================================================
 
 import os
@@ -13,12 +14,12 @@ import urllib.request
 from datetime import datetime
 
 # Colors
-RED = "\e[31m"
-GREEN = "\e[32m"
-YELLOW = "\e[33m"
-BLUE = "\e[34m"
-CYAN = "\e[36m"
-RESET = "\e[0m"
+RED = r"\e[31m"
+GREEN = r"\e[32m"
+YELLOW = r"\e[33m"
+BLUE = r"\e[34m"
+CYAN = r"\e[36m"
+RESET = r"\e[0m"
 
 # Config
 VERSION = "1.0"
@@ -36,8 +37,8 @@ CVE_CRITICAL = 0
 # Check if running as root
 RUN_AS_ROOT = os.geteuid() == 0 if hasattr(os, 'geteuid') else subprocess.getoutput('id -u') == '0'
 if not RUN_AS_ROOT:
-    YELLOW = "\e[33m"
-    CYAN = "\e[36m"
+    YELLOW = r"\e[33m"
+    CYAN = r"\e[36m"
 
 def banner(msg):
     print(f"\n{BLUE}{'='*64}{RESET}\n{CYAN}{msg}{RESET}\n{BLUE}{'='*64}{RESET}")

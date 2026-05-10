@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # ReconL v1.0 : Local Privilege Escalation Reconnaissance Tool (Bash Version)
+# By m.R.L.s | mrls@tuta.io
 # =============================================================================
 
 export LC_ALL=C
