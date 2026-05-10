@@ -23,6 +23,10 @@ my $VERSION = "1.0";
 my $DATE = strftime("%F_%H-%M-%S", localtime);
 my $HOST = $ENV{HOSTNAME} // `hostname` // "unknown";
 chomp($HOST);
+
+# Determine writable directory
+my $LOG_DIR = -d "/tmp" && -w "/tmp" ? "/tmp" : ".";
+
 my $REPORT = "stealth_enum_${HOST}_${DATE}.log";
 my $JSON_FILE = "stealth_enum_${HOST}_${DATE}.json";
 my $KERNEL = `uname -r`;
@@ -83,6 +87,16 @@ sub exists_cmd {
 }
 
 # ========== START ==========
+
+# Check if running on Linux
+if (! -f "/proc/cpuinfo") {
+    print "\n${RED}[!] ERROR: This script requires Linux!${RESET}\n";
+    my $sys = `uname -s`;
+    print "${RED}[!] Detected: $sys${RESET}";
+    print "${YELLOW}[!] /proc/cpuinfo not found. This tool is for Linux only.${RESET}\n";
+    exit(1);
+}
+
 banner("Advanced Stealth Enumeration Framework v$VERSION (Perl)");
 
 if (!$RUN_AS_ROOT) {
@@ -473,18 +487,18 @@ if ($VULN_COUNT > 0 || $GTFO_COUNT > 0 || $SUID_COUNT > 0) {
 # =============================================================================
 banner("ENUMERATION COMPLETE");
 
-print "\n${GREEN}[+] Report:${RESET} $REPORT\n";
-print "${GREEN}[+] JSON:${RESET} $JSON_FILE\n";
+print "\n${GREEN}[+] Report:${RESET} $LOG_DIR/$REPORT\n";
+print "${GREEN}[+] JSON:${RESET} $LOG_DIR/$JSON_FILE\n";
 
 # Write JSON
 select(STDOUT);
-open(my $JSON_OUT, '>', $JSON_FILE) or die "Cannot open $JSON_FILE: $!";
+open(my $JSON_OUT, '>', "$LOG_DIR/$JSON_FILE") or die "Cannot open $LOG_DIR/$JSON_FILE: $!";
 print $JSON_OUT JSON->new->utf8->encode({
     host => $HOST,
     user => $USER_NAME,
     kernel => $KERNEL,
     os => $OS,
-    report => $REPORT,
+    report => "$LOG_DIR/$REPORT",
     date => scalar(localtime),
     findings => {
         gtfobins => $GTFO_COUNT,

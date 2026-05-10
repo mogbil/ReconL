@@ -68,6 +68,14 @@ def get_kernel():
         return f.read().strip().split()[2].strip('()')
 
 # ========== START ==========
+
+# Check if running on Linux
+if not os.path.exists('/proc/cpuinfo'):
+    print(f"\n{RED}[!] ERROR: This script requires Linux!{RESET}")
+    print(f"{RED}[!] Detected: {os.uname().sysname}{RESET}")
+    print(f"{YELLOW}[!] /proc/cpuinfo not found. This tool is for Linux only.{RESET}\n")
+    sys.exit(1)
+
 banner(f"Advanced Stealth Enumeration Framework v{VERSION} (Python)")
 
 if not RUN_AS_ROOT:

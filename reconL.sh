@@ -77,6 +77,14 @@ json_escape() {
 # START
 # =============================================================================
 
+# Check if running on Linux
+if [ ! -f "/proc/cpuinfo" ]; then
+    echo -e "\n${RED}[!] ERROR: This script requires Linux!${RESET}"
+    echo -e "${RED}[!] Detected: $(uname -s)${RESET}"
+    echo -e "${YELLOW}[!] /proc/cpuinfo not found. This tool is for Linux only.${RESET}\n"
+    exit 1
+fi
+
 banner "Advanced Stealth Enumeration Framework v$VERSION"
 
 if [ "$RUN_AS_ROOT" -eq 0 ]; then
