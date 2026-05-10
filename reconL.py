@@ -75,8 +75,12 @@ if not RUN_AS_ROOT:
     print(f"{YELLOW}[!] Some features will be limited (SUID, capabilities, etc.){RESET}")
     print(f"{YELLOW}[!] For full enumeration, run with: sudo python3 {sys.argv[0]}{RESET}\n")
 
+# Determine writable directory for log
+LOG_DIR = "/tmp" if os.path.isdir("/tmp") else "."
+LOG_PATH = f"{LOG_DIR}/{REPORT}"
+
 # Open log
-log_file = open(REPORT, 'a')
+log_file = open(LOG_PATH, 'a')
 original_stdout = sys.stdout
 sys.stdout = log_file
 

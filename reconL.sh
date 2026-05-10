@@ -10,10 +10,17 @@ VERSION="1.0"
 DATE=$(date +%F_%H-%M-%S)
 HOST=$(hostname 2>/dev/null)
 
+# Determine writable directory
+if [ -w "/tmp" ]; then
+    LOG_DIR="/tmp"
+else
+    LOG_DIR="."
+fi
+
 REPORT="stealth_enum_${HOST}_${DATE}.log"
 JSON="stealth_enum_${HOST}_${DATE}.json"
 
-exec > >(tee -a "$REPORT") 2>/dev/null
+exec > >(tee -a "$LOG_DIR/$REPORT" 2>/dev/null)
 
 RED="\e[31m"
 GREEN="\e[32m"

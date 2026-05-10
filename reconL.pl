@@ -41,8 +41,13 @@ if (!$RUN_AS_ROOT) {
     $CYAN = "\e[36m";
 }
 
+# Determine writable directory for log
+my $LOG_DIR = -d "/tmp" ? "/tmp" : ".";
+my $LOG_PATH = "$LOG_DIR/$REPORT";
+
 # Open log file
-open(my $LOG, '>>', $REPORT) or die "Cannot open $REPORT: $!";
+open(my $LOG, '>>', $LOG_PATH) or die "Cannot open $LOG_PATH: $!\n";
+select($LOG);
 select($LOG);
 
 sub banner {
