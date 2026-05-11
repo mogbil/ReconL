@@ -18,8 +18,19 @@ my $DATE = strftime("%F_%H-%M-%S", localtime);
 my $HOST = $ENV{HOSTNAME} // `hostname` // "unknown";
 chomp($HOST);
 
-my $LOG_DIR = (-d "/tmp" && -w "/tmp") ? "/tmp" : ".";
-$LOG_DIR = "." unless -d $LOG_DIR;
+my $LOG_DIR = ".";
+if (-d "/tmp" && -w "/tmp") {
+    $LOG_DIR = "/tmp";
+} elsif (-d "." && -w ".") {
+    $LOG_DIR = ".";
+} else {
+    foreach my $dir ("/var/tmp", "/tmp", "/usr/tmp") {
+        if (-d $dir && -w $dir) {
+            $LOG_DIR = $dir;
+            last;
+        }
+    }
+}
 
 my $REPORT = "stealth_enum_${HOST}_${DATE}.log";
 my $JSON_FILE = "stealth_enum_${HOST}_${DATE}.json";
