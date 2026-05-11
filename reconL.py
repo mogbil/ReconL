@@ -73,18 +73,6 @@ if not RUN_AS_ROOT:
     print(f"{YELLOW}[!] Some features will be limited (SUID, capabilities, etc.){RESET}")
     print(f"{YELLOW}[!] For full enumeration, run with: sudo python3 {sys.argv[0]}{RESET}\n")
 
-LOG_DIR = "/tmp" if os.path.isdir("/tmp") else "."
-LOG_PATH = f"{LOG_DIR}/{REPORT}"
-
-LOG_FILE = None
-def tee_print(*args, **kwargs):
-    msg = ' '.join(str(a) for a in args)
-    print(msg, **kwargs)
-    if LOG_FILE:
-        LOG_FILE.write(msg + '\n')
-
-LOG_FILE = open(LOG_PATH, 'a')
-
 section("Dependencies Check")
 
 missing_deps = []
@@ -372,12 +360,9 @@ if VULN_COUNT > 0 or GTFO_COUNT > 0 or SUID_COUNT > 0:
 
 banner("ENUMERATION COMPLETE")
 
-print(f"\n{GREEN}[+] Report:{RESET} {LOG_DIR}/{REPORT}")
-print(f"{GREEN}[+] JSON:{RESET} {LOG_DIR}/{JSON_FILE}")
+print(f"\n{GREEN}[+] JSON:{RESET} ./{JSON_FILE}")
 
-LOG_FILE.close()
-
-with open(f"{LOG_DIR}/{JSON_FILE}", 'w') as f:
+with open(JSON_FILE, 'w') as f:
     json.dump({
         'host': HOST,
         'user': USER_NAME,

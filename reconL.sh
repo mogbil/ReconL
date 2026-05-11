@@ -6,12 +6,6 @@ VERSION="1.0"
 DATE=$(date +%F_%H-%M-%S)
 HOST=$(hostname 2>/dev/null)
 
-if [ -w "/tmp" ]; then
-    LOG_DIR="/tmp"
-else
-    LOG_DIR="."
-fi
-
 REPORT="stealth_enum_${HOST}_${DATE}.log"
 JSON="stealth_enum_${HOST}_${DATE}.json"
 
@@ -320,13 +314,13 @@ echo "============================================"
 
 section "JSON Export"
 
-cat > "$LOG_DIR/$JSON" <<EOF
+cat > "$JSON" <<EOF
 {
   "host":"$(json_escape "$HOST")",
   "user":"$(json_escape "$USER_NAME")",
   "kernel":"$(json_escape "$KERNEL")",
   "os":"$(json_escape "$OS")",
-  "report":"$(json_escape "$LOG_DIR/$REPORT")",
+  "report":"$(json_escape "$REPORT")",
   "date":"$(date)",
   "findings":{
     "gtfobins":${GTFO_COUNT},
@@ -339,5 +333,4 @@ EOF
 
 banner "ENUMERATION COMPLETE"
 
-echo -e "\n${GREEN}[+] Report:${RESET} $LOG_DIR/$REPORT"
-echo -e "${GREEN}[+] JSON:${RESET} $LOG_DIR/$JSON"
+echo -e "\n${GREEN}[+] JSON:${RESET} ./$JSON"
