@@ -48,39 +48,33 @@ if (!$RUN_AS_ROOT) {
     $CYAN = "\e[36m";
 }
 
-my $LOG_PATH = "$LOG_DIR/$REPORT";
-
-open(my $LOG, '>>', $LOG_PATH) or die "Cannot open $LOG_PATH: $!\n";
-
 sub tee_print {
     my ($msg) = @_;
     print $msg;
-    print $LOG $msg;
 }
 
 sub banner {
     my ($msg) = @_;
-    my $out = "\n${BLUE}================================================================${RESET}\n${CYAN}$msg${RESET}\n${BLUE}================================================================${RESET}\n";
-    tee_print($out);
+    print "\n${BLUE}================================================================${RESET}\n${CYAN}$msg${RESET}\n${BLUE}================================================================${RESET}\n";
 }
 
 sub section {
     my ($msg) = @_;
-    tee_print("\n${YELLOW}[+] $msg${RESET}\n");
+    print "\n${YELLOW}[+] $msg${RESET}\n";
 }
 
 sub progress {
     my ($msg) = @_;
-    tee_print("${CYAN}[*] $msg... ${RESET}");
+    print "${CYAN}[*] $msg... ${RESET}";
     sleep 0.3;
-    tee_print("${GREEN}✓${RESET}\n");
+    print "${GREEN}✓${RESET}\n";
 }
 
 sub safe_cmd {
     my ($cmd) = @_;
-    tee_print("\n${GREEN}\$ $cmd${RESET}\n");
+    print "\n${GREEN}\$ $cmd${RESET}\n";
     my $out = `$cmd 2>/dev/null`;
-    tee_print($out) if $out;
+    print $out if $out;
     return $out;
 }
 
@@ -417,17 +411,15 @@ if ($VULN_COUNT > 0 || $GTFO_COUNT > 0 || $SUID_COUNT > 0) {
 
 banner("ENUMERATION COMPLETE");
 
-print "\n${GREEN}[+] Report:${RESET} $LOG_DIR/$REPORT\n";
-print "${GREEN}[+] JSON:${RESET} $LOG_DIR/$JSON_FILE\n";
+print "\n${GREEN}[+] JSON:${RESET} ./$JSON_FILE\n";
 
-select(STDOUT);
-open(my $JSON_OUT, '>', "$LOG_DIR/$JSON_FILE") or die "Cannot open $LOG_DIR/$JSON_FILE: $!";
+open(my $JSON_OUT, '>', "$JSON_FILE") or die "Cannot open $JSON_FILE: $!\n";
 print $JSON_OUT JSON->new->utf8->encode({
     host => $HOST,
     user => $USER_NAME,
     kernel => $KERNEL,
     os => $OS,
-    report => "$LOG_DIR/$REPORT",
+    report => $REPORT,
     date => scalar(localtime),
     findings => {
         gtfobins => $GTFO_COUNT,
@@ -437,5 +429,3 @@ print $JSON_OUT JSON->new->utf8->encode({
     }
 });
 close($JSON_OUT);
-
-close($LOG);
